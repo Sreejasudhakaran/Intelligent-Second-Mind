@@ -41,7 +41,7 @@ async def create_decision(payload: DecisionCreate, db: Session = Depends(get_db)
     db.refresh(decision)
 
     return DecisionResponse(
-        id=decision.id,
+        id=str(decision.id),
         title=decision.title,
         reasoning=decision.reasoning,
         assumptions=decision.assumptions,
@@ -49,7 +49,7 @@ async def create_decision(payload: DecisionCreate, db: Session = Depends(get_db)
         confidence_score=decision.confidence_score,
         category_tag=decision.category_tag,
         created_at=decision.created_at.isoformat() if decision.created_at else None,
-        user_id=decision.user_id,
+        user_id=str(decision.user_id),
     )
 
 
@@ -63,11 +63,11 @@ def list_decisions(user_id: str = "default_user", db: Session = Depends(get_db))
     )
     return [
         DecisionResponse(
-            id=d.id, title=d.title, reasoning=d.reasoning,
+            id=str(d.id), title=d.title, reasoning=d.reasoning,
             assumptions=d.assumptions, expected_outcome=d.expected_outcome,
             confidence_score=d.confidence_score, category_tag=d.category_tag,
             created_at=d.created_at.isoformat() if d.created_at else None,
-            user_id=d.user_id,
+            user_id=str(d.user_id),
         )
         for d in rows
     ]
@@ -79,9 +79,9 @@ def get_decision(decision_id: str, db: Session = Depends(get_db)):
     if not d:
         raise HTTPException(404, "Decision not found")
     return DecisionResponse(
-        id=d.id, title=d.title, reasoning=d.reasoning,
+        id=str(d.id), title=d.title, reasoning=d.reasoning,
         assumptions=d.assumptions, expected_outcome=d.expected_outcome,
         confidence_score=d.confidence_score, category_tag=d.category_tag,
         created_at=d.created_at.isoformat() if d.created_at else None,
-        user_id=d.user_id,
+        user_id=str(d.user_id),
     )

@@ -55,8 +55,8 @@ async def create_reflection(payload: ReflectionCreate, db: Session = Depends(get
     db.refresh(reflection)
 
     return ReflectionResponse(
-        id=reflection.id,
-        decision_id=reflection.decision_id,
+        id=str(reflection.id),
+        decision_id=str(reflection.decision_id),
         actual_outcome=reflection.actual_outcome,
         lessons=reflection.lessons,
         accuracy_score=reflection.accuracy_score,
@@ -71,8 +71,8 @@ def get_reflection(decision_id: str, db: Session = Depends(get_db)):
     if not r:
         raise HTTPException(404, "No reflection found for this decision")
     return {
-        "id": r.id,
-        "decision_id": r.decision_id,
+        "id": str(r.id),
+        "decision_id": str(r.decision_id),
         "actual_outcome": r.actual_outcome,
         "lessons": r.lessons,
         "accuracy_score": r.accuracy_score,

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional, List
 
 
@@ -18,6 +18,11 @@ class InsightResponse(BaseModel):
     insight_type: Optional[str] = None
     description: Optional[str] = None
     created_at: str
+
+    @field_validator("id", "user_id", mode="before")
+    @classmethod
+    def coerce_uuid(cls, v):
+        return str(v)
 
     model_config = {"from_attributes": True}
 

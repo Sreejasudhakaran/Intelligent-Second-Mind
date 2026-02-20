@@ -6,9 +6,11 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/jarvis"
 
-    # HuggingFace
-    HUGGINGFACE_API_KEY: str = ""
-    HUGGINGFACE_MODEL: str = "mistralai/Mistral-7B-Instruct-v0.2"
+    # HuggingFace local model settings
+    # Embedding model (used by embedding_service.py)
+    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    # LLM model (used locally by llm_service.py)
+    LLM_MODEL: str = "google/flan-t5-base"
 
     # App
     APP_ENV: str = "development"

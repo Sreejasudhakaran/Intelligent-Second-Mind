@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 
 
@@ -17,5 +17,10 @@ class ReflectionResponse(BaseModel):
     accuracy_score: Optional[int] = None
     ai_insight: Optional[str] = None
     created_at: str
+
+    @field_validator("id", "decision_id", mode="before")
+    @classmethod
+    def coerce_uuid(cls, v):
+        return str(v)
 
     model_config = {"from_attributes": True}

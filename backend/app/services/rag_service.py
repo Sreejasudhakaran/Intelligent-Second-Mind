@@ -21,18 +21,21 @@ def find_similar_decisions(
     embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
 
     # Step 2: pgvector cosine similarity query
-    sql = text("""
+    # Note: embedding_str is f-string interpolated (not bound param) because
+    # SQLAlchemy's :param syntax conflicts with PostgreSQL's ::vector cast.
+    # It is safe here since embedding_str is a computed float array, not user input.
+    sql = text(f"""
         SELECT id, title, reasoning, assumptions, expected_outcome,
                confidence_score, category_tag, created_at,
-               1 - (embedding <=> :emb::vector) AS similarity
+               1 - (embedding <=> '{embedding_str}'::vector) AS similarity
         FROM decisions
         WHERE user_id = :uid
           AND embedding IS NOT NULL
-        ORDER BY embedding <=> :emb::vector
+        ORDER BY embedding <=> '{embedding_str}'::vector
         LIMIT :k
     """)
 
-    rows = db.execute(sql, {"emb": embedding_str, "uid": user_id, "k": top_k}).fetchall()
+    rows = db.execute(sql, {"uid": user_id, "k": top_k}).fetchall()
 
     results = []
     for row in rows:

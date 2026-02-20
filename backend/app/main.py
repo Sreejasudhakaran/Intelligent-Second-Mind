@@ -35,8 +35,22 @@ app.add_middleware(AuthMiddleware)
 # Startup / shutdown lifecycle
 @app.on_event("startup")
 async def startup():
-    create_all_tables()
-    start_scheduler()
+    import logging
+    logger = logging.getLogger("jarvis.startup")
+    try:
+        create_all_tables()
+        logger.info("✅ Database tables ready")
+    except Exception as e:
+        logger.warning(
+            "⚠️  Database connection failed at startup — "
+            "check your DATABASE_URL in backend/.env\n"
+            f"   Reason: {e}\n"
+            "   Server is still starting. Configure .env and restart."
+        )
+    try:
+        start_scheduler()
+    except Exception as e:
+        logger.warning(f"⚠️  Scheduler failed to start: {e}")
 
 
 @app.on_event("shutdown")

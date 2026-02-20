@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 from datetime import datetime
 
@@ -23,6 +23,11 @@ class DecisionResponse(BaseModel):
     created_at: Optional[str] = None
     user_id: str
 
+    @field_validator("id", mode="before")
+    @classmethod
+    def coerce_id(cls, v):
+        return str(v)
+
     model_config = {"from_attributes": True}
 
 
@@ -30,3 +35,4 @@ class DecisionWithSimilarity(DecisionResponse):
     similarity: Optional[float] = None
     actual_outcome: Optional[str] = None
     lessons: Optional[str] = None
+

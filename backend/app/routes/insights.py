@@ -76,7 +76,7 @@ async def get_weekly_insights(user_id: str = "default_user", db: Session = Depen
         ai_insight=ai_insight,
         recent_insights=[
             {
-                "id": i.id,
+                "id": str(i.id),
                 "type": i.insight_type,
                 "description": i.description,
                 "created_at": i.created_at.isoformat(),
@@ -106,4 +106,4 @@ async def create_weekly_summary(payload: WeeklySummaryCreate, db: Session = Depe
     )
     db.add(entry)
     db.commit()
-    return {"message": "Weekly summary saved", "id": entry.id}
+    return {"message": "Weekly summary saved", "id": str(entry.id)}
