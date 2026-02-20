@@ -1,0 +1,25 @@
+# Secrets
+.env
+*.env
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Test / build artifacts
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+
+# Logs
+*.log
