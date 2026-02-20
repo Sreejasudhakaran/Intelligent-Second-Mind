@@ -7,6 +7,8 @@ import { Mic, MicOff, AlertCircle } from "lucide-react";
 interface VoiceRecorderProps {
     onTranscript: (text: string) => void;
     className?: string;
+    /** compact = small inline mic icon next to a field label */
+    compact?: boolean;
 }
 
 declare global {
@@ -16,7 +18,7 @@ declare global {
     }
 }
 
-export default function VoiceRecorder({ onTranscript, className = "" }: VoiceRecorderProps) {
+export default function VoiceRecorder({ onTranscript, className = "", compact = false }: VoiceRecorderProps) {
     const [isRecording, setIsRecording] = useState(false);
     const [isSupported, setIsSupported] = useState(false);
     const [liveText, setLiveText] = useState("");
@@ -75,7 +77,7 @@ export default function VoiceRecorder({ onTranscript, className = "" }: VoiceRec
     };
 
     if (!isSupported) {
-        return (
+        return compact ? null : (
             <div className={`flex items-center gap-2 text-xs text-gray-400 ${className}`}>
                 <AlertCircle size={14} />
                 Voice input not supported in this browser
@@ -83,6 +85,33 @@ export default function VoiceRecorder({ onTranscript, className = "" }: VoiceRec
         );
     }
 
+    // ── Compact inline mic (for field labels) ─────────────────────────────────
+    if (compact) {
+        return (
+            <span className={`inline-flex items-center gap-1.5 ${className}`}>
+                <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={isRecording ? stopRecording : startRecording}
+                    title={isRecording ? "Stop recording" : "Speak to fill this field"}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm ${isRecording
+                            ? "bg-red-500 text-white animate-pulse"
+                            : "bg-blue-100 text-blue-500 hover:bg-blue-500 hover:text-white"
+                        }`}
+                >
+                    {isRecording ? <MicOff size={11} /> : <Mic size={11} />}
+                </motion.button>
+                {isRecording && (
+                    <span className="text-[10px] text-red-400 italic animate-pulse">
+                        {liveText ? `"${liveText.slice(0, 30)}…"` : "Listening…"}
+                    </span>
+                )}
+            </span>
+        );
+    }
+
+    // ── Full-size mic (for Decision Title) ────────────────────────────────────
     return (
         <div className={`flex flex-col items-center gap-2 ${className}`}>
             <motion.button
@@ -100,7 +129,7 @@ export default function VoiceRecorder({ onTranscript, className = "" }: VoiceRec
             </motion.button>
             {isRecording && liveText && (
                 <p className="text-xs text-gray-400 italic max-w-[200px] text-center truncate">
-                    "{liveText}"
+                    &ldquo;{liveText}&rdquo;
                 </p>
             )}
             <p className="text-xs text-gray-400">

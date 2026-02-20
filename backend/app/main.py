@@ -36,7 +36,11 @@ app.add_middleware(AuthMiddleware)
 @app.on_event("startup")
 async def startup():
     import logging
+    from sqlalchemy import text
+    from app.db import engine
     logger = logging.getLogger("jarvis.startup")
+
+    # ── Create tables ────────────────────────────────────────────────────
     try:
         create_all_tables()
         logger.info("✅ Database tables ready")
@@ -47,10 +51,26 @@ async def startup():
             f"   Reason: {e}\n"
             "   Server is still starting. Configure .env and restart."
         )
+
+    # ── Auto-migrations (safe: IF NOT EXISTS) ───────────────────────────
+    MIGRATIONS = [
+        "ALTER TABLE decisions ADD COLUMN IF NOT EXISTS decision_type TEXT DEFAULT 'reversible'",
+    ]
+    try:
+        with engine.connect() as conn:
+            for sql in MIGRATIONS:
+                conn.execute(text(sql))
+            conn.commit()
+        logger.info("✅ Auto-migrations applied")
+    except Exception as e:
+        logger.warning(f"⚠️  Auto-migration failed: {e}")
+
+    # ── Scheduler ────────────────────────────────────────────────────────
     try:
         start_scheduler()
     except Exception as e:
         logger.warning(f"⚠️  Scheduler failed to start: {e}")
+
 
 
 @app.on_event("shutdown")

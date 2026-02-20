@@ -58,6 +58,7 @@ def build_daily_guidance_prompt(
     query: str,
     similar_decisions: List[Dict[str, Any]],
     weekly_summary: Dict[str, Any] | None,
+    decision_type: str = "reversible",
 ) -> str:
     decision_context = "\n".join(
         f"- {d['title']}: {d.get('expected_outcome', 'N/A')}"
@@ -71,9 +72,25 @@ def build_daily_guidance_prompt(
             f"Brand {weekly_summary.get('brand_pct', 0):.0f}%"
         )
 
+    if decision_type == "irreversible":
+        type_framing = (
+            "\n⚠ DECISION TYPE: IRREVERSIBLE\n"
+            "This decision is hard to undo and has long-term impact. "
+            "Evaluate downside scenarios, opportunity cost, and long-term constraints. "
+            "Encourage structured thinking before full commitment."
+        )
+    else:
+        type_framing = (
+            "\n↻ DECISION TYPE: REVERSIBLE\n"
+            "This decision can be undone and tested cheaply. "
+            "Encourage fast iteration and learning-based experimentation. "
+            "Avoid over-analysis — speed of testing matters more than perfection."
+        )
+
     return f"""You are JARVIS, a calm and strategic AI advisor.
 
 User focus question: "{query}"
+{type_framing}
 
 Their relevant past decisions:
 {decision_context or 'No past decisions found.'}

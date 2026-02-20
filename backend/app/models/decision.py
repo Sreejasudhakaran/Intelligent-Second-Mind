@@ -20,6 +20,7 @@ class Decision(Base):
     expected_outcome = Column(Text)
     confidence_score = Column(Integer)
     category_tag = Column(String, default="Strategy")
+    decision_type = Column(String, default="reversible")  # reversible | irreversible
     embedding = Column(Vector(384))
     created_at = Column(DateTime, default=datetime.utcnow)
     review_date = Column(DateTime, nullable=True)

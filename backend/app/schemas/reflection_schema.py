@@ -7,6 +7,7 @@ class ReflectionCreate(BaseModel):
     actual_outcome: str
     lessons: Optional[str] = None
     accuracy_score: Optional[int] = None
+    user_id: Optional[str] = "default_user"
 
 
 class ReflectionResponse(BaseModel):

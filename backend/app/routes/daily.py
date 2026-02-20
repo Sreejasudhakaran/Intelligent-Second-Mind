@@ -26,8 +26,11 @@ async def get_daily_guidance(payload: DailyGuidanceRequest, db: Session = Depend
     # Step 3: Weekly context
     weekly_summary = get_latest_weekly_summary(db, payload.user_id or "default_user")
 
-    # Step 4: LLM generation
-    guidance = await generate_daily_guidance(payload.query, similar_decisions, weekly_summary)
+    # Step 4: LLM generation (with decision_type framing)
+    decision_type = getattr(payload, "decision_type", "reversible") or "reversible"
+    guidance = await generate_daily_guidance(
+        payload.query, similar_decisions, weekly_summary, decision_type
+    )
 
     return DailyGuidanceResponse(
         query=payload.query,

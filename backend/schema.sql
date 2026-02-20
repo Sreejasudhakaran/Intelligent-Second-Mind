@@ -11,10 +11,16 @@ CREATE TABLE IF NOT EXISTS decisions (
     expected_outcome TEXT,
     confidence_score INTEGER CHECK (confidence_score BETWEEN 0 AND 100),
     category_tag TEXT,
+    decision_type TEXT DEFAULT 'reversible' CHECK (decision_type IN ('reversible', 'irreversible')),
     embedding VECTOR(384),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     review_date TIMESTAMPTZ
 );
+
+-- Migration: add decision_type to existing installations
+ALTER TABLE decisions ADD COLUMN IF NOT EXISTS decision_type TEXT DEFAULT 'reversible'
+    CHECK (decision_type IN ('reversible', 'irreversible'));
+
 
 -- Create vector similarity index
 CREATE INDEX IF NOT EXISTS decisions_embedding_idx

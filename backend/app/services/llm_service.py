@@ -103,8 +103,10 @@ async def generate_daily_guidance(
     query: str,
     similar_decisions: List[Dict],
     weekly_summary: Dict[str, Any] | None,
+    decision_type: str = "reversible",
 ) -> Dict[str, str]:
-    raw = _call_local(build_daily_guidance_prompt(query, similar_decisions, weekly_summary), 512)
+    prompt = build_daily_guidance_prompt(query, similar_decisions, weekly_summary, decision_type)
+    raw = _call_local(prompt, 512)
     if raw:
         lines = [line.strip() for line in raw.strip().split("\n") if line.strip()]
         if len(lines) >= 3:

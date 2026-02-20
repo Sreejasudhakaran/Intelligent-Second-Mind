@@ -7,7 +7,9 @@ import VoiceRecorder from "@/components/VoiceRecorder";
 import InsightCard from "@/components/InsightCard";
 import { createDecision } from "@/lib/api";
 import { CATEGORIES, CATEGORY_ICONS } from "@/constants/categories";
-import { Sparkles, CheckCircle2 } from "lucide-react";
+import { Sparkles, RotateCcw, AlertTriangle } from "lucide-react";
+
+type DecisionType = "reversible" | "irreversible";
 
 export default function CapturePage() {
     const [form, setForm] = useState({
@@ -17,11 +19,12 @@ export default function CapturePage() {
         expected_outcome: "",
         confidence_score: 70,
     });
+    const [decisionType, setDecisionType] = useState<DecisionType>("reversible");
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
-    const handleVoice = (text: string) => {
-        setForm((f) => ({ ...f, title: f.title ? f.title + " " + text : text }));
+    const appendVoice = (field: keyof typeof form) => (text: string) => {
+        setForm((f) => ({ ...f, [field]: f[field] ? f[field] + " " + text : text }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -29,9 +32,10 @@ export default function CapturePage() {
         if (!form.title.trim()) return;
         setLoading(true);
         try {
-            await createDecision({ ...form, user_id: "default_user" });
+            await createDecision({ ...form, user_id: "default_user", decision_type: decisionType });
             setSuccess(true);
             setForm({ title: "", reasoning: "", assumptions: "", expected_outcome: "", confidence_score: 70 });
+            setDecisionType("reversible");
             setTimeout(() => setSuccess(false), 4000);
         } catch (err) {
             console.error(err);
@@ -65,7 +69,7 @@ export default function CapturePage() {
                             <label className="text-sm font-semibold text-slate-700">
                                 Decision Title <span className="text-red-400">*</span>
                             </label>
-                            <VoiceRecorder onTranscript={handleVoice} />
+                            <VoiceRecorder onTranscript={appendVoice("title")} />
                         </div>
                         <input
                             value={form.title}
@@ -76,9 +80,48 @@ export default function CapturePage() {
                         />
                     </div>
 
+                    {/* ── Decision Nature Toggle ───────────────────────────────── */}
+                    <div>
+                        <label className="text-sm font-semibold text-slate-700 block mb-2">Decision Nature</label>
+                        <div className="flex rounded-full bg-gray-100 p-1 gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setDecisionType("reversible")}
+                                title="Can be undone easily — favour speed and experimentation"
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${decisionType === "reversible"
+                                    ? "bg-white text-blue-600 shadow-sm"
+                                    : "text-gray-400 hover:text-gray-600"
+                                    }`}
+                            >
+                                <RotateCcw size={14} />
+                                Reversible
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setDecisionType("irreversible")}
+                                title="Hard to undo — high long-term impact, requires careful thinking"
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${decisionType === "irreversible"
+                                    ? "bg-white text-orange-500 shadow-sm"
+                                    : "text-gray-400 hover:text-gray-600"
+                                    }`}
+                            >
+                                <AlertTriangle size={14} />
+                                Irreversible
+                            </button>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1.5 text-center">
+                            {decisionType === "reversible"
+                                ? "↻ Can be undone — JARVIS encourages fast iteration"
+                                : "⚠ Hard to undo — JARVIS will evaluate risks and long-term impact"}
+                        </p>
+                    </div>
+
                     {/* Reasoning */}
                     <div>
-                        <label className="text-sm font-semibold text-slate-700 block mb-2">Reasoning</label>
+                        <div className="flex items-center gap-2 mb-2">
+                            <label className="text-sm font-semibold text-slate-700">Reasoning</label>
+                            <VoiceRecorder compact onTranscript={appendVoice("reasoning")} />
+                        </div>
                         <textarea
                             value={form.reasoning}
                             onChange={(e) => setForm((f) => ({ ...f, reasoning: e.target.value }))}
@@ -90,7 +133,10 @@ export default function CapturePage() {
 
                     {/* Assumptions */}
                     <div>
-                        <label className="text-sm font-semibold text-slate-700 block mb-2">Assumptions</label>
+                        <div className="flex items-center gap-2 mb-2">
+                            <label className="text-sm font-semibold text-slate-700">Assumptions</label>
+                            <VoiceRecorder compact onTranscript={appendVoice("assumptions")} />
+                        </div>
                         <textarea
                             value={form.assumptions}
                             onChange={(e) => setForm((f) => ({ ...f, assumptions: e.target.value }))}
@@ -102,7 +148,10 @@ export default function CapturePage() {
 
                     {/* Expected Outcome */}
                     <div>
-                        <label className="text-sm font-semibold text-slate-700 block mb-2">Expected Outcome</label>
+                        <div className="flex items-center gap-2 mb-2">
+                            <label className="text-sm font-semibold text-slate-700">Expected Outcome</label>
+                            <VoiceRecorder compact onTranscript={appendVoice("expected_outcome")} />
+                        </div>
                         <textarea
                             value={form.expected_outcome}
                             onChange={(e) => setForm((f) => ({ ...f, expected_outcome: e.target.value }))}

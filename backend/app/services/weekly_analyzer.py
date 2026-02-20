@@ -50,3 +50,34 @@ def generate_balance_label(summary: Dict[str, float]) -> str:
         return "Great balance — your growth focus is ahead of maintenance this week."
     else:
         return "Your focus is balanced across maintenance and growth activities."
+
+
+def prune_and_merge_principles(
+    db,
+    user_id: str = "default_user",
+    max_principles: int = 5,
+) -> None:
+    """
+    Weekly principle maintenance:
+    - Keep at most `max_principles` active principles per user.
+    - Remove the oldest ones if over the limit (oldest = least relevant).
+    Called by the weekly scheduler.
+    """
+    from app.models.insight import Insight
+    from sqlalchemy import asc
+
+    all_principles = (
+        db.query(Insight)
+        .filter(Insight.user_id == user_id, Insight.insight_type == "principle")
+        .order_by(asc(Insight.created_at))
+        .all()
+    )
+
+    if len(all_principles) <= max_principles:
+        return  # Nothing to prune
+
+    # Remove oldest until we're at max
+    to_remove = all_principles[:len(all_principles) - max_principles]
+    for principle in to_remove:
+        db.delete(principle)
+    db.commit()

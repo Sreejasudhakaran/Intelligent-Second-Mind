@@ -6,8 +6,13 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models.decision import Decision
 from app.models.reflection import Reflection
+from app.models.insight import Insight
 from app.schemas.reflection_schema import ReflectionCreate, ReflectionResponse
-from app.services.reflection_engine import run_reflection_engine, calculate_accuracy_score
+from app.services.reflection_engine import (
+    run_reflection_engine,
+    calculate_accuracy_score,
+    extract_principles_from_lessons,
+)
 
 router = APIRouter(prefix="/reflections", tags=["reflections"])
 
@@ -53,6 +58,55 @@ async def create_reflection(payload: ReflectionCreate, db: Session = Depends(get
     db.add(reflection)
     db.commit()
     db.refresh(reflection)
+
+    # ── Principle extraction (triggered when >= 5 reflections exist) ──────────
+    # Count total reflections for this user via join on decisions
+    total_reflections = (
+        db.query(Reflection)
+        .join(Decision, Decision.id == Reflection.decision_id)
+        .filter(Decision.user_id == (payload.user_id if hasattr(payload, 'user_id') else "default_user"))
+        .count()
+    )
+
+    if total_reflections >= 5:
+        # Fetch last 10 lessons for this user
+        all_lessons = (
+            db.query(Reflection.lessons)
+            .join(Decision, Decision.id == Reflection.decision_id)
+            .filter(
+                Decision.user_id == (payload.user_id if hasattr(payload, 'user_id') else "default_user"),
+                Reflection.lessons != None,
+                Reflection.lessons != "",
+            )
+            .order_by(Reflection.created_at.desc())
+            .limit(10)
+            .all()
+        )
+        lessons_list = [r.lessons for r in all_lessons if r.lessons]
+        principles = extract_principles_from_lessons(lessons_list)
+
+        # Fetch existing principles to avoid duplicates
+        existing = (
+            db.query(Insight.description)
+            .filter(
+                Insight.user_id == (payload.user_id if hasattr(payload, 'user_id') else "default_user"),
+                Insight.insight_type == "principle",
+            )
+            .all()
+        )
+        existing_texts = {r.description for r in existing}
+
+        for principle_text in principles:
+            if principle_text and principle_text not in existing_texts:
+                db.add(Insight(
+                    id=str(uuid.uuid4()),
+                    user_id=(payload.user_id if hasattr(payload, 'user_id') else "default_user"),
+                    insight_type="principle",
+                    description=principle_text,
+                    created_at=datetime.utcnow(),
+                ))
+                existing_texts.add(principle_text)
+        db.commit()
 
     return ReflectionResponse(
         id=str(reflection.id),

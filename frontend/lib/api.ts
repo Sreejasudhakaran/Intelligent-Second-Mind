@@ -16,6 +16,7 @@ export interface DecisionPayload {
     expected_outcome?: string;
     confidence_score?: number;
     user_id?: string;
+    decision_type?: string;  // reversible | irreversible
 }
 
 export const createDecision = (data: DecisionPayload): Promise<Decision> =>
@@ -33,6 +34,7 @@ export interface ReflectionPayload {
     actual_outcome: string;
     lessons?: string;
     accuracy_score?: number;
+    user_id?: string;
 }
 
 export const createReflection = (data: ReflectionPayload): Promise<Reflection> =>
@@ -53,14 +55,23 @@ export const getAlternativeStrategy = (decision_id: string) =>
         .then((r) => r.data as { decision_id: string; alternative_strategy: string });
 
 // ── Insights ──────────────────────────────────────────────
-export const getWeeklyInsights = (user_id = "default_user") =>
-    client.get(`/insights/weekly?user_id=${user_id}`).then(
+export const getWeeklyInsights = (user_id = "default_user", period = "week") =>
+    client.get(`/insights/weekly?user_id=${user_id}&period=${period}`).then(
         (r) =>
             r.data as {
                 summary: WeeklySummary;
                 ai_insight: string;
                 recent_insights: { id: string; type: string; description: string; created_at: string }[];
             }
+    );
+
+export const getPrinciples = (user_id = "default_user") =>
+    client.get(`/insights/principles?user_id=${user_id}`).then(
+        (r) => r.data as {
+            principles: { id: string; description: string; created_at: string }[];
+            total_reflections: number;
+            extraction_threshold: number;
+        }
     );
 
 // ── Daily Guidance ────────────────────────────────────────

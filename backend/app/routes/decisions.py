@@ -33,6 +33,7 @@ async def create_decision(payload: DecisionCreate, db: Session = Depends(get_db)
         expected_outcome=payload.expected_outcome,
         confidence_score=payload.confidence_score,
         category_tag=category_tag,
+        decision_type=payload.decision_type or "reversible",
         embedding=embedding,
         created_at=datetime.utcnow(),
     )
@@ -48,6 +49,7 @@ async def create_decision(payload: DecisionCreate, db: Session = Depends(get_db)
         expected_outcome=decision.expected_outcome,
         confidence_score=decision.confidence_score,
         category_tag=decision.category_tag,
+        decision_type=decision.decision_type or "reversible",
         created_at=decision.created_at.isoformat() if decision.created_at else None,
         user_id=str(decision.user_id),
     )
@@ -66,6 +68,7 @@ def list_decisions(user_id: str = "default_user", db: Session = Depends(get_db))
             id=str(d.id), title=d.title, reasoning=d.reasoning,
             assumptions=d.assumptions, expected_outcome=d.expected_outcome,
             confidence_score=d.confidence_score, category_tag=d.category_tag,
+            decision_type=d.decision_type or "reversible",
             created_at=d.created_at.isoformat() if d.created_at else None,
             user_id=str(d.user_id),
         )
@@ -82,6 +85,7 @@ def get_decision(decision_id: str, db: Session = Depends(get_db)):
         id=str(d.id), title=d.title, reasoning=d.reasoning,
         assumptions=d.assumptions, expected_outcome=d.expected_outcome,
         confidence_score=d.confidence_score, category_tag=d.category_tag,
+        decision_type=d.decision_type or "reversible",
         created_at=d.created_at.isoformat() if d.created_at else None,
         user_id=str(d.user_id),
     )

@@ -10,6 +10,7 @@ class DecisionCreate(BaseModel):
     expected_outcome: Optional[str] = None
     confidence_score: Optional[int] = 50
     user_id: Optional[str] = "default_user"
+    decision_type: Optional[str] = "reversible"  # reversible | irreversible
 
 
 class DecisionResponse(BaseModel):
@@ -20,6 +21,7 @@ class DecisionResponse(BaseModel):
     expected_outcome: Optional[str] = None
     confidence_score: Optional[int] = None
     category_tag: Optional[str] = None
+    decision_type: Optional[str] = "reversible"
     created_at: Optional[str] = None
     user_id: str
 

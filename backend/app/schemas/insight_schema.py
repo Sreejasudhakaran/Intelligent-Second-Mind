@@ -36,6 +36,7 @@ class WeeklyInsightsResponse(BaseModel):
 class DailyGuidanceRequest(BaseModel):
     query: str
     user_id: Optional[str] = "default_user"
+    decision_type: Optional[str] = "reversible"  # reversible | irreversible
 
 
 class DailyGuidanceResponse(BaseModel):
