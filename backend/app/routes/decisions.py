@@ -8,6 +8,7 @@ from app.db import get_db
 from app.models.decision import Decision
 from app.schemas.decision_schema import DecisionCreate, DecisionResponse
 from app.services.embedding_service import generate_embedding, classify_decision
+from app.services.decision_service import classify_decision_type
 
 router = APIRouter(prefix="/decisions", tags=["decisions"])
 
@@ -16,11 +17,21 @@ router = APIRouter(prefix="/decisions", tags=["decisions"])
 async def create_decision(payload: DecisionCreate, db: Session = Depends(get_db)):
     """
     Memory Layer – Capture a new decision:
-    1. Auto-classify into category
-    2. Generate embedding via sentence-transformers
-    3. Store in decisions table with vector
+    1. Auto-classify into category (Revenue Growth, Strategy, etc.)
+    2. Auto-classify reversibility (reversible | irreversible)
+    3. Generate embedding via sentence-transformers
+    4. Store in decisions table with vector
     """
     category_tag = classify_decision(payload.title, payload.reasoning or "")
+
+    # ── Auto-classify reversibility (ignores any user-supplied value) ──
+    decision_type = classify_decision_type(
+        title=payload.title,
+        reasoning=payload.reasoning or "",
+        assumptions=payload.assumptions or "",
+        expected_outcome=payload.expected_outcome or "",
+    )
+
     embed_text = f"{payload.title} {payload.reasoning or ''} {payload.expected_outcome or ''}"
     embedding = generate_embedding(embed_text)
 
@@ -33,7 +44,7 @@ async def create_decision(payload: DecisionCreate, db: Session = Depends(get_db)
         expected_outcome=payload.expected_outcome,
         confidence_score=payload.confidence_score,
         category_tag=category_tag,
-        decision_type=payload.decision_type or "reversible",
+        decision_type=decision_type,
         embedding=embedding,
         created_at=datetime.utcnow(),
     )
@@ -53,6 +64,7 @@ async def create_decision(payload: DecisionCreate, db: Session = Depends(get_db)
         created_at=decision.created_at.isoformat() if decision.created_at else None,
         user_id=str(decision.user_id),
     )
+
 
 
 @router.get("/", response_model=List[DecisionResponse])

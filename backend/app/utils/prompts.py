@@ -1,6 +1,33 @@
 from typing import Any, Dict, List
 
 
+def build_reversibility_prompt(decision_text: str) -> str:
+    """
+    Prompt for binary reversibility classification.
+    Output: exactly one word — 'reversible' or 'irreversible'
+    """
+    return f"""You are a decision risk classifier.
+
+Classify the following decision into one of two categories:
+
+reversible
+A decision that can be undone with low cost, low long-term consequence, and minimal structural impact.
+
+irreversible
+A decision that involves long-term commitments, contracts, financial lock-in, brand positioning shifts, or major strategic constraints.
+
+Decision:
+{decision_text}
+
+Rules:
+Output only one word: reversible or irreversible
+Do not explain
+Do not add extra text
+No punctuation
+Lowercase only"""
+
+
+
 def build_reflection_prompt(
     decision: Dict[str, Any], actual_outcome: str, lessons: str
 ) -> str:

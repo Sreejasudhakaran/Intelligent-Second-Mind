@@ -4,12 +4,10 @@ import { useState } from "react";
 import AnimatedCard from "@/components/AnimatedCard";
 import GradientButton from "@/components/GradientButton";
 import VoiceRecorder from "@/components/VoiceRecorder";
-import InsightCard from "@/components/InsightCard";
 import { createDecision } from "@/lib/api";
+import type { Decision } from "@/lib/types";
 import { CATEGORIES, CATEGORY_ICONS } from "@/constants/categories";
-import { Sparkles, RotateCcw, AlertTriangle } from "lucide-react";
-
-type DecisionType = "reversible" | "irreversible";
+import { Sparkles, RotateCcw, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export default function CapturePage() {
     const [form, setForm] = useState({
@@ -19,9 +17,8 @@ export default function CapturePage() {
         expected_outcome: "",
         confidence_score: 70,
     });
-    const [decisionType, setDecisionType] = useState<DecisionType>("reversible");
     const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
+    const [saved, setSaved] = useState<Decision | null>(null);
 
     const appendVoice = (field: keyof typeof form) => (text: string) => {
         setForm((f) => ({ ...f, [field]: f[field] ? f[field] + " " + text : text }));
@@ -32,17 +29,18 @@ export default function CapturePage() {
         if (!form.title.trim()) return;
         setLoading(true);
         try {
-            await createDecision({ ...form, user_id: "default_user", decision_type: decisionType });
-            setSuccess(true);
+            const result = await createDecision({ ...form, user_id: "default_user" });
+            setSaved(result);
             setForm({ title: "", reasoning: "", assumptions: "", expected_outcome: "", confidence_score: 70 });
-            setDecisionType("reversible");
-            setTimeout(() => setSuccess(false), 4000);
+            setTimeout(() => setSaved(null), 8000);
         } catch (err) {
             console.error(err);
         } finally {
             setLoading(false);
         }
     };
+
+    const isIrreversible = saved?.decision_type === "irreversible";
 
     return (
         <div className="max-w-2xl mx-auto">
@@ -52,18 +50,33 @@ export default function CapturePage() {
                 <p className="text-gray-400 text-sm mt-1">Memory Layer · Record your decision with full context</p>
             </div>
 
-            {success && (
-                <InsightCard
-                    insight="Decision captured and embedded successfully."
-                    label="Saved"
-                    variant="green"
-                    className="mb-6"
-                />
+            {/* ── Auto-classified badge shown after save ── */}
+            {saved && (
+                <div className="mb-6 flex items-center gap-3">
+                    {/* Category badge */}
+                    <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                        <CheckCircle2 size={12} />
+                        Saved · {saved.category_tag ?? "Uncategorised"}
+                    </span>
+
+                    {/* Reversibility badge */}
+                    {isIrreversible ? (
+                        <span className="inline-flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-500 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                            <AlertTriangle size={12} />
+                            Irreversible Decision — High long-term commitment
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-600 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                            <RotateCcw size={12} />
+                            Reversible Decision — Safe to iterate
+                        </span>
+                    )}
+                </div>
             )}
 
             <AnimatedCard className="p-6 mb-6">
                 <form onSubmit={handleSubmit} className="space-y-5">
-                    {/* Title + Voice */}
+                    {/* Title */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <label className="text-sm font-semibold text-slate-700">
@@ -78,42 +91,6 @@ export default function CapturePage() {
                             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
                             required
                         />
-                    </div>
-
-                    {/* ── Decision Nature Toggle ───────────────────────────────── */}
-                    <div>
-                        <label className="text-sm font-semibold text-slate-700 block mb-2">Decision Nature</label>
-                        <div className="flex rounded-full bg-gray-100 p-1 gap-1">
-                            <button
-                                type="button"
-                                onClick={() => setDecisionType("reversible")}
-                                title="Can be undone easily — favour speed and experimentation"
-                                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${decisionType === "reversible"
-                                    ? "bg-white text-blue-600 shadow-sm"
-                                    : "text-gray-400 hover:text-gray-600"
-                                    }`}
-                            >
-                                <RotateCcw size={14} />
-                                Reversible
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setDecisionType("irreversible")}
-                                title="Hard to undo — high long-term impact, requires careful thinking"
-                                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${decisionType === "irreversible"
-                                    ? "bg-white text-orange-500 shadow-sm"
-                                    : "text-gray-400 hover:text-gray-600"
-                                    }`}
-                            >
-                                <AlertTriangle size={14} />
-                                Irreversible
-                            </button>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-1.5 text-center">
-                            {decisionType === "reversible"
-                                ? "↻ Can be undone — JARVIS encourages fast iteration"
-                                : "⚠ Hard to undo — JARVIS will evaluate risks and long-term impact"}
-                        </p>
                     </div>
 
                     {/* Reasoning */}
@@ -167,10 +144,7 @@ export default function CapturePage() {
                             Confidence <span className="text-blue-500 font-bold">{form.confidence_score}%</span>
                         </label>
                         <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            step="5"
+                            type="range" min="0" max="100" step="5"
                             value={form.confidence_score}
                             onChange={(e) => setForm((f) => ({ ...f, confidence_score: Number(e.target.value) }))}
                             className="w-full accent-blue-500"
@@ -180,12 +154,7 @@ export default function CapturePage() {
                         </div>
                     </div>
 
-                    <GradientButton
-                        type="submit"
-                        loading={loading}
-                        loadingText="Capturing decision…"
-                        fullWidth
-                    >
+                    <GradientButton type="submit" loading={loading} loadingText="Capturing decision…" fullWidth>
                         <Sparkles size={16} />
                         Capture Decision
                     </GradientButton>
@@ -203,6 +172,9 @@ export default function CapturePage() {
                         </div>
                     ))}
                 </div>
+                <p className="text-[10px] text-gray-400 mt-3 text-center">
+                    Reversibility is auto-detected from your decision context
+                </p>
             </AnimatedCard>
         </div>
     );

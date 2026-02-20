@@ -6,6 +6,7 @@ export interface Decision {
     expected_outcome?: string;
     confidence_score?: number;
     category_tag?: string;
+    decision_type?: string;   // "reversible" | "irreversible" — auto-classified by backend
     created_at?: string;
     user_id: string;
     similarity?: number;
